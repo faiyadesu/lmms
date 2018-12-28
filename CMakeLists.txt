@@ -192,6 +192,11 @@ IF(NOT SNDFILE_FOUND)
 	MESSAGE(FATAL_ERROR "LMMS requires libsndfile1 and libsndfile1-dev >= 1.0.11 - please install, remove CMakeCache.txt and try again!")
 ENDIF(NOT SNDFILE_FOUND)
 
+# check for lv2
+PKG_CHECK_MODULES(LILV lilv-0 REQUIRED)
+PKG_CHECK_MODULES(SUIL suil-0 REQUIRED)
+PKG_CHECK_MODULES(LV2 lv2 REQUIRED)
+
 IF(WANT_CALF)
 	SET(LMMS_HAVE_CALF TRUE)
 	SET(STATUS_CALF "OK")

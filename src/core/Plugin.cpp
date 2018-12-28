@@ -22,17 +22,19 @@
  *
  */
 
+#include <QMessageBox>
 #include <QtCore/QDebug>
 #include <QtCore/QDir>
 #include <QtCore/QLibrary>
-#include <QMessageBox>
 
+#include "AutomatableModel.h"
 #include "Plugin.h"
 #include "embed.h"
 #include "Engine.h"
 #include "GuiApplication.h"
 #include "DummyPlugin.h"
-#include "AutomatableModel.h"
+#include "Lv2Instrument.h"
+#include "Lv2Manager.h"
 #include "Song.h"
 
 
@@ -46,6 +48,7 @@ static Plugin::Descriptor dummyPluginDescriptor =
 	"Tobias Doerffel <tobydox/at/users.sf.net>",
 	0x0100,
 	Plugin::Undefined,
+  Plugin::Embedded,
 	&dummyLoader,
 	NULL
 } ;
@@ -87,44 +90,64 @@ AutomatableModel * Plugin::childModel( const QString & )
 	return &fm;
 }
 
-
-
-#include "PluginFactory.h"
-Plugin * Plugin::instantiate( const QString& pluginName, Model * parent,
-								void * data )
+#include "EmbeddedPluginFactory.h"
+Plugin* Plugin::instantiate(PluginProtocol protocol,
+                            const QString& _plugin_id,
+                            Model * parent,
+                            void * data )
 {
-	const PluginFactory::PluginInfo& pi = pluginFactory->pluginInfo(pluginName.toUtf8());
-	if( pi.isNull() )
+	switch (protocol)
 	{
-		if( gui )
-		{
-			QMessageBox::information( NULL,
-				tr( "Plugin not found" ),
-				tr( "The plugin \"%1\" wasn't found or could not be loaded!\nReason: \"%2\"" ).
-						arg( pluginName ).arg( pluginFactory->errorString(pluginName) ),
-				QMessageBox::Ok | QMessageBox::Default );
-		}
-		return new DummyPlugin();
-	}
+		case Embedded:
+			{
+				const EmbeddedPluginFactory::PluginInfo& pi =
+					pluginFactory->pluginInfo(_plugin_id.toUtf8());
+				if( pi.isNull() )
+				{
+					if( gui )
+					{
+						QMessageBox::information( NULL,
+							tr( "Plugin not found" ),
+							tr( "The plugin \"%1\" wasn't found or could not be loaded!\nReason: \"%2\"" ).
+									arg(_plugin_id).arg( pluginFactory->errorString(_plugin_id)),
+							QMessageBox::Ok | QMessageBox::Default );
+					}
+					return new DummyPlugin();
+				}
 
-	InstantiationHook instantiationHook = ( InstantiationHook ) pi.library->resolve( "lmms_plugin_main" );
-	if( instantiationHook == NULL )
-	{
-		if( gui )
-		{
-			QMessageBox::information( NULL,
-				tr( "Error while loading plugin" ),
-				tr( "Failed to load plugin \"%1\"!").arg( pluginName ),
-				QMessageBox::Ok | QMessageBox::Default );
-		}
-		return new DummyPlugin();
-	}
+				InstantiationHook instantiationHook = ( InstantiationHook ) pi.library->resolve( "lmms_plugin_main" );
+				if( instantiationHook == NULL )
+				{
+					if( gui )
+					{
+						QMessageBox::information( NULL,
+							tr( "Error while loading plugin" ),
+							tr( "Failed to load plugin \"%1\"!").arg(_plugin_id),
+							QMessageBox::Ok | QMessageBox::Default );
+					}
+					return new DummyPlugin();
+				}
 
-	Plugin * inst = instantiationHook( parent, data );
-	return inst;
+				Plugin * inst = instantiationHook( parent, data );
+				return inst;
+
+				break;
+			}
+		case Lv2:
+			{
+				return new Lv2Instrument(_plugin_id,
+                   static_cast<InstrumentTrack*>(data));
+				break;
+			}
+		case LADSPA:
+			//
+			break;
+    case VST:
+
+      break;
+	}
+	return nullptr;
 }
-
-
 
 
 void Plugin::collectErrorForUI( QString errMsg )
@@ -159,7 +182,7 @@ Plugin::Descriptor::SubPluginFeatures::Key::Key( const QDomElement & key ) :
 		QDomElement e = l.item( i ).toElement();
 		attributes[e.attribute( "name" )] = e.attribute( "value" );
 	}
-		
+
 }
 
 
@@ -169,7 +192,7 @@ QDomElement Plugin::Descriptor::SubPluginFeatures::Key::saveXML(
 						QDomDocument & doc ) const
 {
 	QDomElement e = doc.createElement( "key" );
-	for( AttributeMap::ConstIterator it = attributes.begin(); 
+	for( AttributeMap::ConstIterator it = attributes.begin();
 		it != attributes.end(); ++it )
 	{
 		QDomElement a = doc.createElement( "attribute" );

@@ -60,13 +60,14 @@
 #include "LcdSpinBox.h"
 #include "LedCheckbox.h"
 #include "LeftRightNav.h"
+#include "Lv2Manager.h"
 #include "MainWindow.h"
 #include "MidiClient.h"
 #include "MidiPortMenu.h"
 #include "Mixer.h"
 #include "MixHelpers.h"
 #include "Pattern.h"
-#include "PluginFactory.h"
+#include "EmbeddedPluginFactory.h"
 #include "PluginView.h"
 #include "SamplePlayHandle.h"
 #include "Song.h"
@@ -837,13 +838,13 @@ void InstrumentTrack::setPreviewMode( const bool value )
 
 
 
-Instrument * InstrumentTrack::loadInstrument( const QString & _plugin_name )
+Instrument * InstrumentTrack::loadInstrument( const QString & _instrument_id, Plugin::PluginProtocol proto )
 {
 	silenceAllNotes( true );
 
 	lock();
 	delete m_instrument;
-	m_instrument = Instrument::instantiate( _plugin_name, this );
+	m_instrument = Instrument::instantiate( _instrument_id, this, proto );
 	unlock();
 	setName( m_instrument->displayName() );
 
@@ -851,9 +852,6 @@ Instrument * InstrumentTrack::loadInstrument( const QString & _plugin_name )
 
 	return m_instrument;
 }
-
-
-
 
 
 // #### ITV:

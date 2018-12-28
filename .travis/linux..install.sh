@@ -7,8 +7,10 @@ PACKAGES="cmake libsndfile-dev fftw3-dev libvorbis-dev libogg-dev libmp3lame-dev
 
 VST_PACKAGES="wine-dev libqt5x11extras5-dev qtbase5-private-dev libxcb-util0-dev libxcb-keysyms1-dev"
 
+LV2_PACKAGES="lv2-dev liblilv-dev libsuil-dev"
+
 # Help with unmet dependencies
-PACKAGES="$PACKAGES $VST_PACKAGES libjack-jackd2-0"
+PACKAGES="$PACKAGES $VST_PACKAGES $LV2_PACKAGES libjack-jackd2-0"
 
 if [ $QT5 ]; then
 	PACKAGES="$PACKAGES qt59base qt59translations qt59tools"

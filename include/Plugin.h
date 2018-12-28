@@ -36,17 +36,17 @@
 
 class QWidget;
 
+class AutomatableModel;
+class InstrumentTrack;
 class PixmapLoader;
 class PluginView;
-class AutomatableModel;
-
 
 class EXPORT Plugin : public Model, public JournallingObject
 {
 	MM_OPERATORS
 	Q_OBJECT
 public:
-	enum PluginTypes
+	enum PluginType
 	{
 		Instrument,	// instrument being used in channel-track
 		Effect,		// effect-plugin for effect-board
@@ -59,6 +59,14 @@ public:
 		Undefined = 255
 	} ;
 
+	enum PluginProtocol
+	{
+		Embedded, ///< FIXME, rename to Native
+		LADSPA,
+		Lv2,
+    VST
+	};
+
 	// descriptor holds information about a plugin - every external plugin
 	// has to instantiate such a descriptor in an extern "C"-section so that
 	// the plugin-loader is able to access information about the plugin
@@ -69,7 +77,8 @@ public:
 		const char * description;
 		const char * author;
 		int version;
-		PluginTypes type;
+		PluginType type;
+    PluginProtocol protocol;
 		const PixmapLoader * logo;
 		const char * supportedFileTypes;
 
@@ -112,7 +121,7 @@ public:
 			typedef QList<Key> KeyList;
 
 
-			SubPluginFeatures( Plugin::PluginTypes type ) :
+			SubPluginFeatures( Plugin::PluginType type ) :
 				m_type( type )
 			{
 			}
@@ -131,7 +140,7 @@ public:
 
 
 		protected:
-			const Plugin::PluginTypes m_type;
+			const Plugin::PluginType m_type;
 		} ;
 
 		SubPluginFeatures * subPluginFeatures;
@@ -153,7 +162,7 @@ public:
 	}
 
 	// return plugin-type
-	inline PluginTypes type( void ) const
+	inline PluginType type( void ) const
 	{
 		return m_descriptor->type;
 	}
@@ -164,6 +173,12 @@ public:
 		return m_descriptor;
 	}
 
+  // return plugin protocol
+  inline PluginProtocol protocol () const
+  {
+    return m_descriptor->protocol;
+  }
+
 	// can be called if a file matching supportedFileTypes should be
 	// loaded/processed with the help of this plugin
 	virtual void loadFile( const QString & file );
@@ -172,16 +187,18 @@ public:
 	// reference the class header.  Should return null if not key not found.
 	virtual AutomatableModel* childModel( const QString & modelName );
 
-	// returns an instance of a plugin whose name matches to given one
-	// if specified plugin couldn't be loaded, it creates a dummy-plugin
-	static Plugin * instantiate( const QString& pluginName, Model * parent, void * data );
+	// if  plugin couldn't be loaded, it creates a dummy-plugin
+	static Plugin* instantiate(PluginProtocol protocol,
+                             const QString& plugin_id,
+			                       Model * parent,
+                             void * data);
 
-	// create a view for the model 
+	// create a view for the model
 	PluginView * createView( QWidget * parent );
 
 
 protected:
-	// create a view for the model 
+	// create a view for the model
 	virtual PluginView* instantiateView( QWidget * ) = 0;
 	void collectErrorForUI( QString errMsg );
 

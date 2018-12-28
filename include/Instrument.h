@@ -113,10 +113,10 @@ public:
 	// provided functions:
 	// --------------------------------------------------------------------
 
-	// instantiate instrument-plugin with given name or return NULL
+	// instantiate instrument-plugin with given id or return NULL
 	// on failure
-	static Instrument * instantiate( const QString & _plugin_name,
-									InstrumentTrack * _instrument_track );
+	static Instrument * instantiate(const QString & _plugin_id,
+									InstrumentTrack * _instrument_track , PluginProtocol proto = Plugin::Embedded);
 
 	virtual bool isFromTrack( const Track * _track ) const;
 

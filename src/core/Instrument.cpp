@@ -26,7 +26,6 @@
 #include "InstrumentTrack.h"
 #include "DummyInstrument.h"
 
-
 Instrument::Instrument( InstrumentTrack * _instrument_track,
 					const Descriptor * _descriptor ) :
 	Plugin( _descriptor, NULL/* _instrument_track*/ ),
@@ -66,10 +65,12 @@ f_cnt_t Instrument::beatLen( NotePlayHandle * ) const
 
 
 
-Instrument * Instrument::instantiate( const QString & _plugin_name,
-					InstrumentTrack * _instrument_track )
+Instrument * Instrument::instantiate( const QString & _plugin_id,
+					InstrumentTrack * _instrument_track,
+				      Plugin::PluginProtocol proto)
 {
-	Plugin * p = Plugin::instantiate( _plugin_name, _instrument_track,
+	Plugin * p = Plugin::instantiate( proto,
+                                   _plugin_id, _instrument_track,
 							_instrument_track );
 	// check whether instantiated plugin is an instrument
 	if( dynamic_cast<Instrument *>( p ) != NULL )
@@ -83,16 +84,10 @@ Instrument * Instrument::instantiate( const QString & _plugin_name,
 	return( new DummyInstrument( _instrument_track ) );
 }
 
-
-
-
 bool Instrument::isFromTrack( const Track * _track ) const
 {
 	return( m_instrumentTrack == _track );
 }
-
-
-
 
 void Instrument::applyRelease( sampleFrame * buf, const NotePlayHandle * _n )
 {
